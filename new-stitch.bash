@@ -11,6 +11,7 @@ DIRECTORY="$1"
 [[ "${DIRECTORY}" != */ ]] && DIRECTORY="${DIRECTORY}/"
 HEIGHT_BOX=100 # Height of the white box
 POINT_SIZE=50 # Font size for text
+SIDE_PADDING=10 # Padding for each side
 
 # Sanitize directory name for the output image filename
 sanitized_dir_name=$(basename "$DIRECTORY" | sed 's/ /_/g')
@@ -41,6 +42,9 @@ for img in "${all_images[@]}"; do
     fi
 done
 
+# Adjust max_width to account for side padding
+max_width=$((max_width + 2 * SIDE_PADDING))
+
 # Temporary directory for processed images
 temp_dir=$(mktemp -d)
 trap 'rm -rf -- "$temp_dir"' EXIT
@@ -53,8 +57,8 @@ for img in "${all_images[@]}"; do
     convert -size "${max_width}x${HEIGHT_BOX}" xc:white -gravity center -pointsize $POINT_SIZE -annotate +0+0 "$name_no_ext" miff:- | convert - "$img" -gravity north -append "$temp_dir/$filename"
 done
 
-# Stack all images vertically
-montage "$temp_dir/"* -tile 1x -geometry +0+0 -background white "$OUTPUT_IMAGE"
+# Stack all images vertically and add side padding
+montage "$temp_dir/"* -tile 1x -geometry +0+0 -background white miff:- | convert - -gravity center -background white -extent "${max_width}x" "$OUTPUT_IMAGE"
 
 echo "Stacked image created: $OUTPUT_IMAGE"
 
