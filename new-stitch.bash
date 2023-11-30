@@ -53,9 +53,26 @@ trap 'rm -rf -- "$temp_dir"' EXIT
 for img in "${all_images[@]}"; do
     filename=$(basename "$img")
     name_no_ext="${filename%.*}"
-    # Create a white box with the filename and append it to the top of the image
-    convert -size "${max_width}x${HEIGHT_BOX}" xc:white -gravity center -pointsize $POINT_SIZE -annotate +0+0 "$name_no_ext" miff:- | convert - "$img" -gravity north -append "$temp_dir/$filename"
+
+    # Step 1: Create a white box with the filename
+    # -size: specify the size of the white box
+    # xc:white: create a solid white image
+    # -gravity center: set the text position to the center
+    # -pointsize: set the font size for the annotation
+    # -annotate: add the text annotation (filename without extension)
+    convert -size "${max_width}x${HEIGHT_BOX}" xc:white -gravity center -pointsize $POINT_SIZE -annotate +0+0 "$name_no_ext" "$temp_dir/white_box_$filename"
+
+    # Step 2: Append the white box to the top of the current image
+    # -gravity north: ensure that the appending happens at the top
+    # -append: append the white box image above the current image
+    convert "$temp_dir/white_box_$filename" "$img" -gravity north -append "$temp_dir/$filename"
+
+    # Clean up the temporary white box image
+    rm -f "$temp_dir/white_box_$filename"
 done
+
+# Rest of the script remains the same
+
 
 # Stack all images vertically and add side padding
 montage "$temp_dir/"* -tile 1x -geometry +0+0 -background white miff:- | convert - -gravity center -background white -extent "${max_width}x" "$OUTPUT_IMAGE"
