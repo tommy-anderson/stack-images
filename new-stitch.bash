@@ -9,6 +9,7 @@ fi
 # Constants
 DIRECTORY="$1"
 [[ "${DIRECTORY}" != */ ]] && DIRECTORY="${DIRECTORY}/"
+HEIGHT_BOX=100 # Height of the white box
 
 # Sanitize directory name for the output image filename
 sanitized_dir_name=$(basename "$DIRECTORY" | sed 's/ /_/g')
@@ -46,14 +47,14 @@ trap 'rm -rf -- "$temp_dir"' EXIT
 # Process each image
 for img in "${all_images[@]}"; do
     filename=$(basename "$img")
-    width=$(identify -format "%w" "$img")
-    # Calculate the amount of padding needed on each side
-    padding=$(( (max_width - width) / 2 ))
-    # Add white blocks to the left and right of the image
-    convert "$img" -gravity center -background white -extent "${max_width}x" "$temp_dir/$filename"
+    # Add a white box to the top of each image and save to the temp directory
+    convert -size "${max_width}x${HEIGHT_BOX}" xc:white "$img" -gravity north -append "$temp_dir/$filename"
 done
 
 # Stack all images vertically
 montage "$temp_dir/"* -tile 1x -geometry +0+0 -background white "$OUTPUT_IMAGE"
 
 echo "Stacked image created: $OUTPUT_IMAGE"
+
+# Clean up
+rm -rf -- "$temp_dir"
