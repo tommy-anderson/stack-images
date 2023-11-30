@@ -10,6 +10,7 @@ fi
 DIRECTORY="$1"
 [[ "${DIRECTORY}" != */ ]] && DIRECTORY="${DIRECTORY}/"
 HEIGHT_BOX=100 # Height of the white box
+POINT_SIZE=50 # Font size for text
 
 # Sanitize directory name for the output image filename
 sanitized_dir_name=$(basename "$DIRECTORY" | sed 's/ /_/g')
@@ -47,8 +48,9 @@ trap 'rm -rf -- "$temp_dir"' EXIT
 # Process each image
 for img in "${all_images[@]}"; do
     filename=$(basename "$img")
-    # Add a white box to the top of each image and save to the temp directory
-    convert -size "${max_width}x${HEIGHT_BOX}" xc:white "$img" -gravity north -append "$temp_dir/$filename"
+    name_no_ext="${filename%.*}"
+    # Create a white box with the filename and append it to the top of the image
+    convert -size "${max_width}x${HEIGHT_BOX}" xc:white -gravity center -pointsize $POINT_SIZE -annotate +0+0 "$name_no_ext" miff:- | convert - "$img" -gravity north -append "$temp_dir/$filename"
 done
 
 # Stack all images vertically
